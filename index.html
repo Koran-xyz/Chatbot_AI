@@ -118,11 +118,8 @@
         </div>
       </div>
       <select class="provider" id="provider" aria-label="AI選択">
-        <option value="auto">自動選択</option>
         <option value="openai">ChatGPT</option>
         <option value="gemini">Gemini</option>
-        <option value="copilot">Copilot</option>
-        <option value="grok">Grok</option>
       </select>
     </header>
 
@@ -259,7 +256,7 @@
 
   async function askGateway(messages){
     if(!settings.gatewayUrl){
-      return "フロント画面は正常に動いています。\n\nまだAI Gatewayが未接続なので、実際のAI応答は次の工程です。設定からGateway URLを接続すると、ChatGPT / Geminiなどへ安全に振り分けられます。";
+      return "フロント画面は正常に動いています。\n\nまだAI Gatewayが未接続なので、実際のAI応答は次の工程です。設定からGateway URLを接続すると、ChatGPT / Geminiへ安全に振り分けられます。";
     }
     const res=await fetch(settings.gatewayUrl,{
       method:"POST",
