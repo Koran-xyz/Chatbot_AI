@@ -1,57 +1,51 @@
-const CACHE_NAME = 'ai-chat-v2';
-const APP_SHELL = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+// Service Worker for NAVI AI Chat PWA
+const CACHE_NAME='navi-ai-chat-v3';
+const APP_SHELL=['./','./index.html','./manifest.json','./icon.svg'];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
-  );
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-    )
-  );
+self.addEventListener('activate',event=>{
+  event.waitUntil(caches.keys().then(keys=>Promise.all(
+    keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key))
+  )));
   self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
+self.addEventListener('fetch',event=>{
+  const request=event.request;
+  if(request.method!=='GET') return;
 
-  // API / POST / 外部ドメインはキャッシュしない。
-  if (request.method !== 'GET') return;
+  const url=new URL(request.url);
+  // Railway Gateway / AI APIs / other origins are always network-only.
+  if(url.origin!==self.location.origin) return;
 
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-
-  if (request.mode === 'navigate') {
+  if(request.mode==='navigate'){
     event.respondWith(
       fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+        .then(response=>{
+          if(response.ok){
+            const copy=response.clone();
+            caches.open(CACHE_NAME).then(cache=>cache.put('./index.html',copy));
+          }
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(()=>caches.match('./index.html'))
     );
     return;
   }
 
   event.respondWith(
     fetch(request)
-      .then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      .then(response=>{
+        if(response.ok){
+          const copy=response.clone();
+          caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));
         }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(()=>caches.match(request))
   );
 });
