@@ -1,11 +1,12 @@
 {
-  "name": "NAVI",
+  "name": "NAVI Chatbot AI",
   "short_name": "NAVI",
-  "description": "NAVI GitHub Pages PWA",
+  "description": "NAVI multi-AI chatbot frontend",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1020",
-  "theme_color": "#111827",
-  "lang": "ja"
+  "background_color": "#080d18",
+  "theme_color": "#0b1020",
+  "lang": "ja",
+  "orientation": "any"
 }
