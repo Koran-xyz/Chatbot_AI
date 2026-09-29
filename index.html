@@ -122,16 +122,44 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateAIUI();
   renderMessages();
   await checkGateway();
+  const savedKey=sessionStorage.getItem(CHAT_KEY_SESSION);
+  if(savedKey){
+    document.getElementById('gateway-key').value=savedKey;
+  }
 });
 
 function saveMessages(){
   localStorage.setItem(CHAT_STORAGE, JSON.stringify(messages.slice(-100)));
 }
-function saveGatewayKey(){
+async function saveGatewayKey(){
   const key=document.getElementById('gateway-key').value.trim();
-  if(key) sessionStorage.setItem(CHAT_KEY_SESSION,key);
-  else sessionStorage.removeItem(CHAT_KEY_SESSION);
-  showToast(key ? '接続キーをこのセッションに設定しました' : '接続キーを解除しました');
+  if(!key){
+    sessionStorage.removeItem(CHAT_KEY_SESSION);
+    showToast('接続キーを解除しました');
+    return;
+  }
+
+  try{
+    const res=await fetch(GATEWAY_BASE+'/api/chat/providers',{
+      method:'GET',
+      headers:{'Authorization':'Bearer '+key},
+      cache:'no-store'
+    });
+    if(res.status===401){
+      throw new Error('Gateway接続キーが違います。OpenAI / Gemini のAPIキーではありません。');
+    }
+    if(!res.ok){
+      const data=await res.json().catch(()=>({}));
+      throw new Error(data.detail||('HTTP '+res.status));
+    }
+
+    sessionStorage.setItem(CHAT_KEY_SESSION,key);
+    showToast('Gateway接続キーを確認しました ✓');
+    closeSidebar();
+  }catch(e){
+    sessionStorage.removeItem(CHAT_KEY_SESSION);
+    showToast('❌ '+e.message);
+  }
 }
 
 function switchAI(ai){
@@ -237,6 +265,7 @@ async function sendMessage(){
       })
     });
     const data=await res.json().catch(()=>({}));
+    if(res.status===401) throw new Error('Gateway接続キーが違います（AIのAPIキーではありません）');
     if(!res.ok) throw new Error(data.detail||('HTTP '+res.status));
     hideTyping();
     const reply=data.integrated_answer || data.answer?.text || '応答を取得できませんでした';
