@@ -1,12 +1,21 @@
 {
-  "name": "NAVI Chatbot AI",
+  "name": "NAVI AI Chat",
   "short_name": "NAVI",
-  "description": "NAVI multi-AI chatbot frontend",
+  "description": "ChatGPT と Gemini を切り替えて使う NAVI チャットアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#080d18",
-  "theme_color": "#0b1020",
-  "lang": "ja",
-  "orientation": "any"
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "ja"
 }
