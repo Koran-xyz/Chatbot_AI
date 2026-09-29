@@ -1,340 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="NAVI multi-AI chatbot front end">
-  <link rel="manifest" href="./manifest.json">
-  <title>NAVI Chatbot AI</title>
-  <style>
-    :root{
-      color-scheme:dark;
-      --bg:#080d18;
-      --panel:#0f172a;
-      --panel2:#111c32;
-      --line:#24324a;
-      --text:#f8fafc;
-      --muted:#94a3b8;
-      --accent:#7c3aed;
-      --accent2:#2563eb;
-      --ok:#10b981;
-      --danger:#ef4444;
-      --shadow:0 18px 50px rgba(0,0,0,.28);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:radial-gradient(circle at 50% -10%,#18233d 0,#080d18 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    button,input,select,textarea{font:inherit}
-    button{cursor:pointer}
-    .app{display:grid;grid-template-columns:280px minmax(0,1fr);height:100dvh}
-    .sidebar{border-right:1px solid var(--line);background:rgba(10,16,29,.93);backdrop-filter:blur(18px);padding:18px;display:flex;flex-direction:column;gap:14px}
-    .brand{display:flex;align-items:center;gap:12px;padding:4px 4px 12px}
-    .logo{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 30px rgba(124,58,237,.28)}
-    .brand h1{font-size:18px;margin:0}.brand small{display:block;color:var(--muted);margin-top:3px}
-    .new-chat,.ghost,.danger{border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--text);background:var(--panel2)}
-    .new-chat{border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700}
-    .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:7px 4px}
-    .history{display:flex;flex-direction:column;gap:7px;overflow:auto;min-height:80px;flex:1}
-    .history button{width:100%;text-align:left;border:0;border-radius:10px;background:transparent;color:#dbeafe;padding:10px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .history button:hover,.history button.active{background:#16233c}
-    .status-card{border:1px solid var(--line);border-radius:14px;background:rgba(17,28,50,.7);padding:12px}
-    .status-row{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}
-    .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#64748b;margin-right:7px}.dot.ok{background:var(--ok)}
-    .side-actions{display:grid;gap:8px}
-    .main{min-width:0;display:grid;grid-template-rows:auto 1fr auto}
-    .topbar{min-height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;background:rgba(8,13,24,.74);backdrop-filter:blur(16px)}
-    .topbar-left{display:flex;align-items:center;gap:10px;min-width:0}
-    .mobile-menu{display:none}
-    .title-wrap{min-width:0}.chat-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub{font-size:12px;color:var(--muted);margin-top:2px}
-    select,input{background:#111c32;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
-    .messages{overflow:auto;padding:24px max(18px,calc((100% - 920px)/2));scroll-behavior:smooth}
-    .welcome{max-width:720px;margin:8vh auto 0;text-align:center}
-    .welcome .hero{width:70px;height:70px;margin:0 auto 20px;border-radius:22px;display:grid;place-items:center;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:var(--shadow)}
-    .welcome h2{font-size:clamp(28px,4vw,42px);margin:0 0 10px}.welcome p{color:var(--muted);line-height:1.8}
-    .chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid var(--line);border-radius:999px;padding:9px 12px;background:#10192c;color:#cbd5e1}
-    .message{display:flex;gap:12px;margin:0 0 24px;max-width:900px}
-    .message.user{margin-left:auto;flex-direction:row-reverse}
-    .avatar{flex:0 0 34px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:800;background:#1e293b}
-    .message.assistant .avatar{background:linear-gradient(135deg,var(--accent),var(--accent2))}
-    .bubble{max-width:min(760px,86%);border:1px solid var(--line);border-radius:16px;padding:13px 15px;line-height:1.7;background:rgba(17,28,50,.76);white-space:pre-wrap;overflow-wrap:anywhere}
-    .message.user .bubble{background:#1d2b4b}
-    .composer-wrap{border-top:1px solid var(--line);padding:14px max(16px,calc((100% - 920px)/2));background:linear-gradient(180deg,rgba(8,13,24,.2),rgba(8,13,24,.95) 35%)}
-    .composer{display:flex;gap:10px;align-items:flex-end;border:1px solid var(--line);background:#0f172a;border-radius:18px;padding:10px 10px 10px 14px;box-shadow:var(--shadow)}
-    textarea{flex:1;resize:none;max-height:180px;min-height:28px;border:0;outline:0;background:transparent;color:var(--text);line-height:1.55;padding:7px 0}
-    .send{flex:0 0 44px;height:44px;border:0;border-radius:13px;color:white;font-size:18px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
-    .composer-note{text-align:center;font-size:11px;color:#64748b;margin-top:7px}
-    dialog{width:min(560px,calc(100% - 28px));border:1px solid var(--line);border-radius:18px;padding:0;background:#0f172a;color:var(--text);box-shadow:0 24px 90px rgba(0,0,0,.55)}
-    dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
-    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}
-    .modal-body{padding:20px;display:grid;gap:16px}.field{display:grid;gap:7px}.field label{font-size:13px;color:#cbd5e1}.field input{width:100%}.help{font-size:12px;color:var(--muted);line-height:1.6}
-    .modal-foot{padding:15px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}
-    .banner{display:none;margin:0 18px 12px;padding:10px 12px;border:1px solid #854d0e;border-radius:12px;background:#2a1d08;color:#fef3c7;font-size:13px}
-    @media(max-width:760px){
-      .app{grid-template-columns:1fr}
-      .sidebar{position:fixed;inset:0 auto 0 0;width:min(82vw,310px);z-index:30;transform:translateX(-103%);transition:.2s ease;box-shadow:var(--shadow)}
-      .sidebar.open{transform:translateX(0)}
-      .mobile-menu{display:inline-grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:11px;background:#111c32;color:white}
-      .messages{padding-left:14px;padding-right:14px}
-      .topbar{padding-left:12px;padding-right:12px}
-      .provider{max-width:132px}
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="NAVI AI Chat"/>
+<meta name="theme-color" content="#1a1a2e"/>
+<link rel="manifest" href="./manifest.json"/>
+<link rel="icon" href="./icon.svg" type="image/svg+xml"/>
+<title>NAVI AI Chat</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f1a;color:#e8e8f0;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative;background:#0f0f1a}
+  #header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#1a1a2e;border-bottom:1px solid #2a2a4a;gap:8px;min-height:58px}
+  #menu-btn{background:none;border:none;color:#a0a0c0;font-size:22px;cursor:pointer;padding:4px 8px;border-radius:8px}
+  #header-title{font-size:16px;font-weight:700;flex:1;text-align:center;white-space:nowrap}
+  #ai-switcher{display:flex;gap:6px}
+  .ai-btn{padding:6px 10px;border-radius:20px;border:1.5px solid transparent;font-size:12px;font-weight:700;cursor:pointer;background:transparent}
+  .ai-btn.chatgpt{border-color:#2ea86a;color:#2ea86a}.ai-btn.chatgpt.active{background:#2ea86a;color:white}
+  .ai-btn.gemini{border-color:#4285f4;color:#4285f4}.ai-btn.gemini.active{background:#4285f4;color:white}
+  .ai-btn.unavailable{opacity:.45}
+  #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100}
+  #sidebar-overlay.open{display:block}
+  #sidebar{position:fixed;top:0;left:-290px;width:275px;height:100%;background:#12122a;border-right:1px solid #2a2a4a;z-index:101;transition:left .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:12px}
+  #sidebar.open{left:0}
+  #sidebar h2{font-size:18px;color:#c0c0e0;margin-bottom:6px}
+  .section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6060a0;margin-top:6px}
+  .status-card{border:1px solid #2a2a4a;background:#0f0f1a;border-radius:12px;padding:11px 12px;font-size:13px;line-height:1.55}
+  .status-row{display:flex;justify-content:space-between;gap:10px}.ok{color:#2ea86a}.warn{color:#fbbf24}.bad{color:#ff6680}
+  .field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;color:#9090b0}.field input{padding:9px 10px;border-radius:8px;border:1px solid #2a2a4a;background:#0f0f1a;color:#e8e8f0;outline:none}
+  .hint{font-size:11px;color:#686890;line-height:1.5}
+  .side-btn{padding:10px;border-radius:10px;border:1px solid #3a3a5a;background:#17172e;color:#d8d8e8;font-weight:600;cursor:pointer}
+  #clear-btn{margin-top:auto;border-color:#ff4466;color:#ff6680;background:transparent}
+  #chat-area{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
+  #empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:#7070a8;text-align:center;padding:24px}
+  #empty-state .icon{width:66px;height:66px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;font-weight:800;font-size:28px}
+  #empty-state p{font-size:14px;line-height:1.7}
+  .msg{display:flex;flex-direction:column;max-width:86%;animation:fadeIn .18s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;align-items:flex-end}.msg.ai{align-self:flex-start;align-items:flex-start}
+  .msg-bubble{padding:10px 14px;border-radius:18px;font-size:15px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
+  .msg.user .msg-bubble{background:#4285f4;color:white;border-bottom-right-radius:4px}
+  .msg.ai .msg-bubble{background:#1e1e38;color:#e8e8f0;border-bottom-left-radius:4px}
+  .msg-meta{font-size:11px;color:#6060a0;margin-top:3px;padding:0 4px}.badge-chatgpt{color:#2ea86a}.badge-gemini{color:#4285f4}
+  .typing-bubble{display:flex;gap:5px;align-items:center;padding:12px 16px}.typing-bubble span{width:8px;height:8px;border-radius:50%;background:#6060a0;animation:bounce 1.2s infinite}.typing-bubble span:nth-child(2){animation-delay:.2s}.typing-bubble span:nth-child(3){animation-delay:.4s}@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+  #input-area{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:#1a1a2e;border-top:1px solid #2a2a4a}
+  #user-input{flex:1;padding:10px 14px;border-radius:22px;border:1.5px solid #2a2a4a;background:#0f0f1a;color:#e8e8f0;font-size:15px;resize:none;outline:none;max-height:120px;min-height:42px;line-height:1.4;font-family:inherit}
+  #user-input:focus{border-color:#4285f4}
+  #send-btn{width:42px;height:42px;border-radius:50%;border:none;background:#4285f4;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  #send-btn:disabled{background:#2a2a4a;cursor:not-allowed}
+  #toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(18px);background:#2a2a4a;color:#e8e8f0;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:200;max-width:90%;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
 </head>
 <body>
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="logo">N</div>
-      <div><h1>NAVI Chatbot AI</h1><small>Multi-AI Frontend</small></div>
-    </div>
+<div id="app">
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div id="sidebar">
+    <h2>⚙️ 設定</h2>
 
-    <button class="new-chat" id="newChatBtn">＋ 新しいチャット</button>
-
-    <div class="section-title">履歴</div>
-    <div class="history" id="history"></div>
-
-    <div class="section-title">External Free Region</div>
+    <div class="section-title">接続状態</div>
     <div class="status-card">
-      <div class="status-row">
-        <span><span class="dot" id="gatewayDot"></span>接続状態</span>
-        <strong id="gatewayState">未設定</strong>
-      </div>
-      <div class="help" style="margin-top:8px">AI APIキーはGitHub Pagesに置かず、外部Gateway側で管理します。</div>
+      <div class="status-row"><span>Gateway</span><strong id="gateway-status" class="warn">確認中</strong></div>
+      <div class="status-row"><span>ChatGPT</span><strong id="openai-status">確認中</strong></div>
+      <div class="status-row"><span>Gemini</span><strong id="gemini-status">確認中</strong></div>
     </div>
 
-    <div class="side-actions">
-      <button class="ghost" id="settingsBtn">⚙ 設定</button>
+    <div class="section-title">Gateway Access Key</div>
+    <div class="field">
+      <label for="gateway-key">接続キー</label>
+      <input id="gateway-key" type="password" placeholder="Gateway key"/>
+      <div class="hint">OpenAI / Gemini のAPIキーはここには入れません。APIキーはRailway側だけで管理します。この接続キーもリポジトリには保存されません。</div>
     </div>
-  </aside>
+    <button class="side-btn" onclick="saveGatewayKey()">このセッションで使用</button>
 
-  <main class="main">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="mobile-menu" id="menuBtn">☰</button>
-        <div class="title-wrap">
-          <div class="chat-title" id="chatTitle">新しいチャット</div>
-          <div class="sub" id="connectionText">ローカルUI起動済み</div>
-        </div>
-      </div>
-      <select class="provider" id="provider" aria-label="AI選択">
-        <option value="openai">ChatGPT</option>
-        <option value="gemini">Gemini</option>
-      </select>
-    </header>
-
-    <section class="messages" id="messages">
-      <div class="welcome" id="welcome">
-        <div class="hero">N</div>
-        <h2>NAVIへようこそ</h2>
-        <p>ここがAIチャットのフロントです。<br>裏側のGatewayを接続すると、複数AIへ振り分けられます。</p>
-        <div class="chips">
-          <button class="chip" data-text="今日やる事を整理して">今日やる事を整理</button>
-          <button class="chip" data-text="この文章を分かりやすく直して">文章を直す</button>
-          <button class="chip" data-text="作業計画を3案出して">作業計画を作る</button>
-        </div>
-      </div>
-    </section>
-
-    <div>
-      <div class="banner" id="banner"></div>
-      <footer class="composer-wrap">
-        <div class="composer">
-          <textarea id="input" rows="1" placeholder="メッセージを入力..." aria-label="メッセージ"></textarea>
-          <button class="send" id="sendBtn" title="送信">➤</button>
-        </div>
-        <div class="composer-note">Enterで送信 / Shift+Enterで改行</div>
-      </footer>
+    <div class="section-title">外部自由領域</div>
+    <div class="status-card">
+      <div id="region-status">サーバー側で参照します。保護されたメタルール本文はブラウザへ返しません。</div>
     </div>
-  </main>
+
+    <button id="clear-btn" class="side-btn" onclick="clearChat()">🗑 チャット履歴を削除</button>
+  </div>
+
+  <div id="header">
+    <button id="menu-btn" onclick="toggleSidebar()">☰</button>
+    <div id="header-title">💬 ChatGPT</div>
+    <div id="ai-switcher">
+      <button class="ai-btn chatgpt active" id="sw-chatgpt" onclick="switchAI('chatgpt')">ChatGPT</button>
+      <button class="ai-btn gemini" id="sw-gemini" onclick="switchAI('gemini')">Gemini</button>
+    </div>
+  </div>
+
+  <div id="chat-area">
+    <div id="empty-state">
+      <div class="icon">N</div>
+      <p>ChatGPT または Gemini を選んで<br/>会話を始めましょう。<br/><br/>AIの秘密鍵はこのページには保存しません。</p>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <textarea id="user-input" oninput="autoResize(this)" onkeydown="handleKey(event)" placeholder="メッセージを入力..." rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">➤</button>
+  </div>
 </div>
-
-<dialog id="settingsDialog">
-  <div class="modal-head">
-    <h3>接続設定</h3>
-    <button class="ghost" id="closeSettings">✕</button>
-  </div>
-  <div class="modal-body">
-    <div class="field">
-      <label for="gatewayUrl">AI Gateway URL</label>
-      <input id="gatewayUrl" type="url" placeholder="https://example.com/api/chat">
-      <div class="help">OpenAIやGeminiの秘密鍵はここへ入れません。秘密鍵はGateway / サーバー側だけに保存してください。</div>
-    </div>
-    <div class="field">
-      <label for="regionUrl">外部自由領域 URL（任意）</label>
-      <input id="regionUrl" type="url" placeholder="https://example.com/external-free-region">
-      <div class="help">将来のMigrationBoard / SharedBoard参照先として保持します。</div>
-    </div>
-  </div>
-  <div class="modal-foot">
-    <button class="ghost" id="cancelSettings">キャンセル</button>
-    <button class="new-chat" id="saveSettings">保存</button>
-  </div>
-</dialog>
+<div id="toast"></div>
 
 <script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const messagesEl = $("#messages");
-  const input = $("#input");
-  const provider = $("#provider");
-  const welcome = $("#welcome");
-  const historyEl = $("#history");
-  const titleEl = $("#chatTitle");
-  const banner = $("#banner");
-  const gatewayUrlInput = $("#gatewayUrl");
-  const regionUrlInput = $("#regionUrl");
-  const settingsDialog = $("#settingsDialog");
+const GATEWAY_BASE = 'https://navi-api-production-42c9.up.railway.app';
+const CHAT_KEY_SESSION = 'navi_gateway_chat_key_v1';
+const CHAT_STORAGE = 'navi_chat_messages_v2';
+const AI_STORAGE = 'navi_current_ai_v2';
 
-  const STORAGE_KEY = "navi_chats_v1";
-  const SETTINGS_KEY = "navi_settings_v1";
+let currentAI = localStorage.getItem(AI_STORAGE) || 'chatgpt';
+let messages = JSON.parse(localStorage.getItem(CHAT_STORAGE) || '[]');
+let isLoading = false;
+let providerStatus = {openai:false, gemini:false};
 
-  let chats = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  let currentId = chats[0]?.id || null;
-  let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('gateway-key').value = sessionStorage.getItem(CHAT_KEY_SESSION) || '';
+  updateAIUI();
+  renderMessages();
+  await checkGateway();
+});
 
-  function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(16).slice(2)); }
-  function current(){ return chats.find(c => c.id === currentId); }
-  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(chats.slice(0,50))); renderHistory(); }
-  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); updateConnectionStatus(); }
+function saveMessages(){
+  localStorage.setItem(CHAT_STORAGE, JSON.stringify(messages.slice(-100)));
+}
+function saveGatewayKey(){
+  const key=document.getElementById('gateway-key').value.trim();
+  if(key) sessionStorage.setItem(CHAT_KEY_SESSION,key);
+  else sessionStorage.removeItem(CHAT_KEY_SESSION);
+  showToast(key ? '接続キーをこのセッションに設定しました' : '接続キーを解除しました');
+}
 
-  function ensureChat(){
-    if(!currentId){
-      const c={id:uid(),title:"新しいチャット",createdAt:Date.now(),messages:[]};
-      chats.unshift(c); currentId=c.id; save();
+function switchAI(ai){
+  currentAI=ai;
+  localStorage.setItem(AI_STORAGE,ai);
+  updateAIUI();
+  const provider=ai==='chatgpt'?'openai':'gemini';
+  if(!providerStatus[provider]) showToast((ai==='chatgpt'?'ChatGPT':'Gemini')+' はサーバー側APIキーが未設定です');
+}
+
+function updateAIUI(){
+  document.getElementById('sw-chatgpt').classList.toggle('active',currentAI==='chatgpt');
+  document.getElementById('sw-gemini').classList.toggle('active',currentAI==='gemini');
+  document.getElementById('header-title').textContent=currentAI==='chatgpt'?'💬 ChatGPT':'✨ Gemini';
+}
+
+async function checkGateway(){
+  try{
+    const health=await fetch(GATEWAY_BASE+'/health',{cache:'no-store'});
+    if(!health.ok) throw new Error('health');
+    document.getElementById('gateway-status').textContent='接続';
+    document.getElementById('gateway-status').className='ok';
+
+    const statusRes=await fetch(GATEWAY_BASE+'/api/status',{cache:'no-store'});
+    if(statusRes.ok){
+      const data=await statusRes.json();
+      providerStatus=data.providers||providerStatus;
+      setProviderState('openai',providerStatus.openai);
+      setProviderState('gemini',providerStatus.gemini);
+      document.getElementById('region-status').textContent=
+        '外部自由領域: '+(data.meta_rules_status||'unknown')+' / project: '+(data.project_id||'未設定')+
+        '。メタルール本文は非公開です。';
     }
-    return current();
+  }catch(e){
+    document.getElementById('gateway-status').textContent='未接続';
+    document.getElementById('gateway-status').className='bad';
+    setProviderState('openai',false);
+    setProviderState('gemini',false);
+  }
+}
+
+function setProviderState(provider,ok){
+  const id=provider==='openai'?'openai-status':'gemini-status';
+  const el=document.getElementById(id);
+  el.textContent=ok?'利用可':'未設定';
+  el.className=ok?'ok':'warn';
+  const btn=document.getElementById(provider==='openai'?'sw-chatgpt':'sw-gemini');
+  btn.classList.toggle('unavailable',!ok);
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+async function sendMessage(){
+  const input=document.getElementById('user-input');
+  const text=input.value.trim();
+  if(!text||isLoading) return;
+
+  const provider=currentAI==='chatgpt'?'openai':'gemini';
+  if(!providerStatus[provider]){
+    showToast((currentAI==='chatgpt'?'ChatGPT':'Gemini')+' のAPIキーがRailway側で未設定です');
+    return;
   }
 
-  function renderHistory(){
-    historyEl.innerHTML="";
-    if(!chats.length){
-      const e=document.createElement("div"); e.className="help"; e.textContent="まだ履歴はありません"; historyEl.appendChild(e); return;
-    }
-    chats.forEach(c=>{
-      const b=document.createElement("button");
-      b.textContent=c.title||"新しいチャット";
-      b.className=c.id===currentId?"active":"";
-      b.onclick=()=>{ currentId=c.id; renderChat(); renderHistory(); closeSidebar(); };
-      historyEl.appendChild(b);
-    });
+  const gatewayKey=sessionStorage.getItem(CHAT_KEY_SESSION)||document.getElementById('gateway-key').value.trim();
+  if(!gatewayKey){
+    toggleSidebar();
+    showToast('Gateway Access Keyを設定してください');
+    return;
   }
 
-  function renderChat(){
-    [...messagesEl.querySelectorAll(".message")].forEach(n=>n.remove());
-    const c=current();
-    const msgs=c?.messages||[];
-    welcome.style.display=msgs.length?"none":"block";
-    titleEl.textContent=c?.title||"新しいチャット";
-    msgs.forEach(addMessageToDOM);
-    messagesEl.scrollTop=messagesEl.scrollHeight;
-  }
+  const history=messages.slice(-20).map(m=>({
+    role:m.role==='ai'?'assistant':'user',
+    content:m.content
+  }));
 
-  function addMessageToDOM(m){
-    const row=document.createElement("div");
-    row.className="message "+(m.role==="user"?"user":"assistant");
-    const av=document.createElement("div");
-    av.className="avatar"; av.textContent=m.role==="user"?"YOU":"N";
-    const bubble=document.createElement("div");
-    bubble.className="bubble"; bubble.textContent=m.content;
-    row.append(av,bubble); messagesEl.appendChild(row);
-  }
+  messages.push({role:'user',content:text,ai:currentAI});
+  saveMessages();
+  input.value='';
+  autoResize(input);
+  renderMessages();
+  showTyping();
+  setLoading(true);
 
-  function setBanner(text){
-    if(!text){ banner.style.display="none"; banner.textContent=""; return; }
-    banner.textContent=text; banner.style.display="block";
-  }
-
-  function updateConnectionStatus(){
-    const ok=!!settings.gatewayUrl;
-    $("#gatewayDot").classList.toggle("ok",ok);
-    $("#gatewayState").textContent=ok?"設定済み":"未設定";
-    $("#connectionText").textContent=ok?"Gateway接続設定あり":"ローカルUI起動済み";
-    gatewayUrlInput.value=settings.gatewayUrl||"";
-    regionUrlInput.value=settings.regionUrl||"";
-  }
-
-  async function askGateway(messages){
-    if(!settings.gatewayUrl){
-      return "フロント画面は正常に動いています。\n\nまだAI Gatewayが未接続なので、実際のAI応答は次の工程です。設定からGateway URLを接続すると、ChatGPT / Geminiへ安全に振り分けられます。";
-    }
-    const res=await fetch(settings.gatewayUrl,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+  try{
+    const res=await fetch(GATEWAY_BASE+'/api/chat',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+gatewayKey
+      },
       body:JSON.stringify({
-        provider:provider.value,
-        messages,
-        external_region_url: settings.regionUrl || null
+        message:text,
+        preferred_provider:provider,
+        verify:false,
+        history
       })
     });
-    if(!res.ok) throw new Error("Gateway error: "+res.status);
-    const data=await res.json();
-    return data.reply ?? data.message ?? data.output ?? JSON.stringify(data);
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail||('HTTP '+res.status));
+    hideTyping();
+    const reply=data.integrated_answer || data.answer?.text || '応答を取得できませんでした';
+    messages.push({role:'ai',content:String(reply),ai:currentAI});
+    saveMessages();
+  }catch(e){
+    hideTyping();
+    messages.push({role:'ai',content:'❌ 接続エラー: '+e.message,ai:currentAI});
+    saveMessages();
+  }finally{
+    setLoading(false);
+    renderMessages();
   }
+}
 
-  async function send(){
-    const text=input.value.trim();
-    if(!text) return;
-    setBanner("");
-    const c=ensureChat();
-    const userMsg={role:"user",content:text};
-    c.messages.push(userMsg);
-    if(c.messages.length===1) c.title=text.slice(0,28);
-    input.value=""; autoResize(); save(); renderChat();
-
-    $("#sendBtn").disabled=true;
-    try{
-      const reply=await askGateway(c.messages);
-      c.messages.push({role:"assistant",content:String(reply)});
-      save(); renderChat();
-    }catch(err){
-      c.messages.push({role:"assistant",content:"接続エラーが発生しました。Gateway URLとサーバー側の設定を確認してください。"});
-      save(); renderChat();
-      setBanner("Gatewayへの接続に失敗しました。APIキーをこのGitHub Pagesへ直接書かないでください。");
-      console.error(err);
-    }finally{
-      $("#sendBtn").disabled=false;
-    }
+function renderMessages(){
+  const area=document.getElementById('chat-area');
+  const empty=document.getElementById('empty-state');
+  if(messages.length===0){
+    empty.style.display='flex';
+    area.querySelectorAll('.msg').forEach(el=>el.remove());
+    return;
   }
+  empty.style.display='none';
+  area.querySelectorAll('.msg').forEach(el=>el.remove());
+  messages.forEach(m=>{
+    const div=document.createElement('div');
+    div.className='msg '+(m.role==='user'?'user':'ai');
+    const aiLabel=m.ai==='gemini'?'Gemini':'ChatGPT';
+    const badge=m.ai==='gemini'?'badge-gemini':'badge-chatgpt';
 
-  function autoResize(){
-    input.style.height="auto";
-    input.style.height=Math.min(input.scrollHeight,180)+"px";
-  }
+    const bubble=document.createElement('div');
+    bubble.className='msg-bubble';
+    bubble.textContent=m.content;
 
-  function newChat(){
-    const c={id:uid(),title:"新しいチャット",createdAt:Date.now(),messages:[]};
-    chats.unshift(c); currentId=c.id; save(); renderChat(); closeSidebar(); input.focus();
-  }
+    const meta=document.createElement('div');
+    meta.className='msg-meta '+(m.role==='ai'?badge:'');
+    meta.textContent=m.role==='ai'?aiLabel:'あなた';
 
-  function closeSidebar(){ $("#sidebar").classList.remove("open"); }
-
-  $("#sendBtn").onclick=send;
-  input.addEventListener("input",autoResize);
-  input.addEventListener("keydown",e=>{
-    if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }
+    div.appendChild(bubble);
+    div.appendChild(meta);
+    area.appendChild(div);
   });
-  $("#newChatBtn").onclick=newChat;
-  $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");
+  area.scrollTop=area.scrollHeight;
+}
 
-  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ input.value=b.dataset.text; autoResize(); input.focus(); });
+let typingEl=null;
+function showTyping(){
+  const area=document.getElementById('chat-area');
+  typingEl=document.createElement('div');
+  typingEl.className='msg ai';
+  typingEl.id='typing-indicator';
+  typingEl.innerHTML='<div class="msg-bubble typing-bubble"><span></span><span></span><span></span></div>';
+  area.appendChild(typingEl);
+  area.scrollTop=area.scrollHeight;
+}
+function hideTyping(){if(typingEl){typingEl.remove();typingEl=null}}
+function setLoading(v){
+  isLoading=v;
+  document.getElementById('send-btn').disabled=v;
+  document.getElementById('user-input').disabled=v;
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px'}
+function clearChat(){
+  messages=[];
+  saveMessages();
+  renderMessages();
+  closeSidebar();
+  showToast('チャット履歴を削除しました');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
 
-  $("#settingsBtn").onclick=()=>settingsDialog.showModal();
-  $("#closeSettings").onclick=()=>settingsDialog.close();
-  $("#cancelSettings").onclick=()=>settingsDialog.close();
-  $("#saveSettings").onclick=()=>{
-    settings.gatewayUrl=gatewayUrlInput.value.trim();
-    settings.regionUrl=regionUrlInput.value.trim();
-    saveSettings();
-    settingsDialog.close();
-  };
-
-  if("serviceWorker" in navigator){
-    window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.error));
-  }
-
-  renderHistory(); renderChat(); updateConnectionStatus();
-})();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.warn));
+}
 </script>
 </body>
 </html>
