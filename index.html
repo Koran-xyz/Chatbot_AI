@@ -2,31 +2,342 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#111827">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="NAVI multi-AI chatbot front end">
   <link rel="manifest" href="./manifest.json">
-  <title>NAVI</title>
+  <title>NAVI Chatbot AI</title>
   <style>
-    body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#0b1020;color:#fff}
-    main{width:min(720px,calc(100% - 32px));padding:32px;border:1px solid #334155;border-radius:20px;background:#111827}
-    h1{font-size:52px;margin:0 0 8px}p{line-height:1.7;color:#cbd5e1}.status{margin-top:24px;padding:14px;border-radius:12px;background:#12382f}
+    :root{
+      color-scheme:dark;
+      --bg:#080d18;
+      --panel:#0f172a;
+      --panel2:#111c32;
+      --line:#24324a;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --accent:#7c3aed;
+      --accent2:#2563eb;
+      --ok:#10b981;
+      --danger:#ef4444;
+      --shadow:0 18px 50px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(circle at 50% -10%,#18233d 0,#080d18 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{display:grid;grid-template-columns:280px minmax(0,1fr);height:100dvh}
+    .sidebar{border-right:1px solid var(--line);background:rgba(10,16,29,.93);backdrop-filter:blur(18px);padding:18px;display:flex;flex-direction:column;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px;padding:4px 4px 12px}
+    .logo{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 30px rgba(124,58,237,.28)}
+    .brand h1{font-size:18px;margin:0}.brand small{display:block;color:var(--muted);margin-top:3px}
+    .new-chat,.ghost,.danger{border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--text);background:var(--panel2)}
+    .new-chat{border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700}
+    .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:7px 4px}
+    .history{display:flex;flex-direction:column;gap:7px;overflow:auto;min-height:80px;flex:1}
+    .history button{width:100%;text-align:left;border:0;border-radius:10px;background:transparent;color:#dbeafe;padding:10px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .history button:hover,.history button.active{background:#16233c}
+    .status-card{border:1px solid var(--line);border-radius:14px;background:rgba(17,28,50,.7);padding:12px}
+    .status-row{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}
+    .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#64748b;margin-right:7px}.dot.ok{background:var(--ok)}
+    .side-actions{display:grid;gap:8px}
+    .main{min-width:0;display:grid;grid-template-rows:auto 1fr auto}
+    .topbar{min-height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;background:rgba(8,13,24,.74);backdrop-filter:blur(16px)}
+    .topbar-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .mobile-menu{display:none}
+    .title-wrap{min-width:0}.chat-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub{font-size:12px;color:var(--muted);margin-top:2px}
+    select,input{background:#111c32;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+    .messages{overflow:auto;padding:24px max(18px,calc((100% - 920px)/2));scroll-behavior:smooth}
+    .welcome{max-width:720px;margin:8vh auto 0;text-align:center}
+    .welcome .hero{width:70px;height:70px;margin:0 auto 20px;border-radius:22px;display:grid;place-items:center;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:var(--shadow)}
+    .welcome h2{font-size:clamp(28px,4vw,42px);margin:0 0 10px}.welcome p{color:var(--muted);line-height:1.8}
+    .chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid var(--line);border-radius:999px;padding:9px 12px;background:#10192c;color:#cbd5e1}
+    .message{display:flex;gap:12px;margin:0 0 24px;max-width:900px}
+    .message.user{margin-left:auto;flex-direction:row-reverse}
+    .avatar{flex:0 0 34px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:800;background:#1e293b}
+    .message.assistant .avatar{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    .bubble{max-width:min(760px,86%);border:1px solid var(--line);border-radius:16px;padding:13px 15px;line-height:1.7;background:rgba(17,28,50,.76);white-space:pre-wrap;overflow-wrap:anywhere}
+    .message.user .bubble{background:#1d2b4b}
+    .composer-wrap{border-top:1px solid var(--line);padding:14px max(16px,calc((100% - 920px)/2));background:linear-gradient(180deg,rgba(8,13,24,.2),rgba(8,13,24,.95) 35%)}
+    .composer{display:flex;gap:10px;align-items:flex-end;border:1px solid var(--line);background:#0f172a;border-radius:18px;padding:10px 10px 10px 14px;box-shadow:var(--shadow)}
+    textarea{flex:1;resize:none;max-height:180px;min-height:28px;border:0;outline:0;background:transparent;color:var(--text);line-height:1.55;padding:7px 0}
+    .send{flex:0 0 44px;height:44px;border:0;border-radius:13px;color:white;font-size:18px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    .composer-note{text-align:center;font-size:11px;color:#64748b;margin-top:7px}
+    dialog{width:min(560px,calc(100% - 28px));border:1px solid var(--line);border-radius:18px;padding:0;background:#0f172a;color:var(--text);box-shadow:0 24px 90px rgba(0,0,0,.55)}
+    dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}
+    .modal-body{padding:20px;display:grid;gap:16px}.field{display:grid;gap:7px}.field label{font-size:13px;color:#cbd5e1}.field input{width:100%}.help{font-size:12px;color:var(--muted);line-height:1.6}
+    .modal-foot{padding:15px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}
+    .banner{display:none;margin:0 18px 12px;padding:10px 12px;border:1px solid #854d0e;border-radius:12px;background:#2a1d08;color:#fef3c7;font-size:13px}
+    @media(max-width:760px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:fixed;inset:0 auto 0 0;width:min(82vw,310px);z-index:30;transform:translateX(-103%);transition:.2s ease;box-shadow:var(--shadow)}
+      .sidebar.open{transform:translateX(0)}
+      .mobile-menu{display:inline-grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:11px;background:#111c32;color:white}
+      .messages{padding-left:14px;padding-right:14px}
+      .topbar{padding-left:12px;padding-right:12px}
+      .provider{max-width:132px}
+    }
   </style>
 </head>
 <body>
-<main>
-  <h1>NAVI</h1>
-  <p>GitHub Pagesで動作する最小構成のPWAです。</p>
-  <p>ここを土台に、チャット窓口・外部自由領域・移植再構築用掲示板などを追加できます。</p>
-  <div class="status" id="status">起動中...</div>
-</main>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">N</div>
+      <div><h1>NAVI Chatbot AI</h1><small>Multi-AI Frontend</small></div>
+    </div>
+
+    <button class="new-chat" id="newChatBtn">＋ 新しいチャット</button>
+
+    <div class="section-title">履歴</div>
+    <div class="history" id="history"></div>
+
+    <div class="section-title">External Free Region</div>
+    <div class="status-card">
+      <div class="status-row">
+        <span><span class="dot" id="gatewayDot"></span>接続状態</span>
+        <strong id="gatewayState">未設定</strong>
+      </div>
+      <div class="help" style="margin-top:8px">AI APIキーはGitHub Pagesに置かず、外部Gateway側で管理します。</div>
+    </div>
+
+    <div class="side-actions">
+      <button class="ghost" id="settingsBtn">⚙ 設定</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu" id="menuBtn">☰</button>
+        <div class="title-wrap">
+          <div class="chat-title" id="chatTitle">新しいチャット</div>
+          <div class="sub" id="connectionText">ローカルUI起動済み</div>
+        </div>
+      </div>
+      <select class="provider" id="provider" aria-label="AI選択">
+        <option value="auto">自動選択</option>
+        <option value="openai">ChatGPT</option>
+        <option value="gemini">Gemini</option>
+        <option value="copilot">Copilot</option>
+        <option value="grok">Grok</option>
+      </select>
+    </header>
+
+    <section class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="hero">N</div>
+        <h2>NAVIへようこそ</h2>
+        <p>ここがAIチャットのフロントです。<br>裏側のGatewayを接続すると、複数AIへ振り分けられます。</p>
+        <div class="chips">
+          <button class="chip" data-text="今日やる事を整理して">今日やる事を整理</button>
+          <button class="chip" data-text="この文章を分かりやすく直して">文章を直す</button>
+          <button class="chip" data-text="作業計画を3案出して">作業計画を作る</button>
+        </div>
+      </div>
+    </section>
+
+    <div>
+      <div class="banner" id="banner"></div>
+      <footer class="composer-wrap">
+        <div class="composer">
+          <textarea id="input" rows="1" placeholder="メッセージを入力..." aria-label="メッセージ"></textarea>
+          <button class="send" id="sendBtn" title="送信">➤</button>
+        </div>
+        <div class="composer-note">Enterで送信 / Shift+Enterで改行</div>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<dialog id="settingsDialog">
+  <div class="modal-head">
+    <h3>接続設定</h3>
+    <button class="ghost" id="closeSettings">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="field">
+      <label for="gatewayUrl">AI Gateway URL</label>
+      <input id="gatewayUrl" type="url" placeholder="https://example.com/api/chat">
+      <div class="help">OpenAIやGeminiの秘密鍵はここへ入れません。秘密鍵はGateway / サーバー側だけに保存してください。</div>
+    </div>
+    <div class="field">
+      <label for="regionUrl">外部自由領域 URL（任意）</label>
+      <input id="regionUrl" type="url" placeholder="https://example.com/external-free-region">
+      <div class="help">将来のMigrationBoard / SharedBoard参照先として保持します。</div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="ghost" id="cancelSettings">キャンセル</button>
+    <button class="new-chat" id="saveSettings">保存</button>
+  </div>
+</dialog>
+
 <script>
-const status=document.getElementById("status");
-if("serviceWorker" in navigator){
-  window.addEventListener("load",async()=>{
-    try{await navigator.serviceWorker.register("./sw.js");status.textContent="NAVI PWA 起動完了";}
-    catch(e){status.textContent="ページは動作中 / Service Worker登録失敗";}
+(() => {
+  const $ = s => document.querySelector(s);
+  const messagesEl = $("#messages");
+  const input = $("#input");
+  const provider = $("#provider");
+  const welcome = $("#welcome");
+  const historyEl = $("#history");
+  const titleEl = $("#chatTitle");
+  const banner = $("#banner");
+  const gatewayUrlInput = $("#gatewayUrl");
+  const regionUrlInput = $("#regionUrl");
+  const settingsDialog = $("#settingsDialog");
+
+  const STORAGE_KEY = "navi_chats_v1";
+  const SETTINGS_KEY = "navi_settings_v1";
+
+  let chats = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  let currentId = chats[0]?.id || null;
+  let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+
+  function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(16).slice(2)); }
+  function current(){ return chats.find(c => c.id === currentId); }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(chats.slice(0,50))); renderHistory(); }
+  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); updateConnectionStatus(); }
+
+  function ensureChat(){
+    if(!currentId){
+      const c={id:uid(),title:"新しいチャット",createdAt:Date.now(),messages:[]};
+      chats.unshift(c); currentId=c.id; save();
+    }
+    return current();
+  }
+
+  function renderHistory(){
+    historyEl.innerHTML="";
+    if(!chats.length){
+      const e=document.createElement("div"); e.className="help"; e.textContent="まだ履歴はありません"; historyEl.appendChild(e); return;
+    }
+    chats.forEach(c=>{
+      const b=document.createElement("button");
+      b.textContent=c.title||"新しいチャット";
+      b.className=c.id===currentId?"active":"";
+      b.onclick=()=>{ currentId=c.id; renderChat(); renderHistory(); closeSidebar(); };
+      historyEl.appendChild(b);
+    });
+  }
+
+  function renderChat(){
+    [...messagesEl.querySelectorAll(".message")].forEach(n=>n.remove());
+    const c=current();
+    const msgs=c?.messages||[];
+    welcome.style.display=msgs.length?"none":"block";
+    titleEl.textContent=c?.title||"新しいチャット";
+    msgs.forEach(addMessageToDOM);
+    messagesEl.scrollTop=messagesEl.scrollHeight;
+  }
+
+  function addMessageToDOM(m){
+    const row=document.createElement("div");
+    row.className="message "+(m.role==="user"?"user":"assistant");
+    const av=document.createElement("div");
+    av.className="avatar"; av.textContent=m.role==="user"?"YOU":"N";
+    const bubble=document.createElement("div");
+    bubble.className="bubble"; bubble.textContent=m.content;
+    row.append(av,bubble); messagesEl.appendChild(row);
+  }
+
+  function setBanner(text){
+    if(!text){ banner.style.display="none"; banner.textContent=""; return; }
+    banner.textContent=text; banner.style.display="block";
+  }
+
+  function updateConnectionStatus(){
+    const ok=!!settings.gatewayUrl;
+    $("#gatewayDot").classList.toggle("ok",ok);
+    $("#gatewayState").textContent=ok?"設定済み":"未設定";
+    $("#connectionText").textContent=ok?"Gateway接続設定あり":"ローカルUI起動済み";
+    gatewayUrlInput.value=settings.gatewayUrl||"";
+    regionUrlInput.value=settings.regionUrl||"";
+  }
+
+  async function askGateway(messages){
+    if(!settings.gatewayUrl){
+      return "フロント画面は正常に動いています。\n\nまだAI Gatewayが未接続なので、実際のAI応答は次の工程です。設定からGateway URLを接続すると、ChatGPT / Geminiなどへ安全に振り分けられます。";
+    }
+    const res=await fetch(settings.gatewayUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        provider:provider.value,
+        messages,
+        external_region_url: settings.regionUrl || null
+      })
+    });
+    if(!res.ok) throw new Error("Gateway error: "+res.status);
+    const data=await res.json();
+    return data.reply ?? data.message ?? data.output ?? JSON.stringify(data);
+  }
+
+  async function send(){
+    const text=input.value.trim();
+    if(!text) return;
+    setBanner("");
+    const c=ensureChat();
+    const userMsg={role:"user",content:text};
+    c.messages.push(userMsg);
+    if(c.messages.length===1) c.title=text.slice(0,28);
+    input.value=""; autoResize(); save(); renderChat();
+
+    $("#sendBtn").disabled=true;
+    try{
+      const reply=await askGateway(c.messages);
+      c.messages.push({role:"assistant",content:String(reply)});
+      save(); renderChat();
+    }catch(err){
+      c.messages.push({role:"assistant",content:"接続エラーが発生しました。Gateway URLとサーバー側の設定を確認してください。"});
+      save(); renderChat();
+      setBanner("Gatewayへの接続に失敗しました。APIキーをこのGitHub Pagesへ直接書かないでください。");
+      console.error(err);
+    }finally{
+      $("#sendBtn").disabled=false;
+    }
+  }
+
+  function autoResize(){
+    input.style.height="auto";
+    input.style.height=Math.min(input.scrollHeight,180)+"px";
+  }
+
+  function newChat(){
+    const c={id:uid(),title:"新しいチャット",createdAt:Date.now(),messages:[]};
+    chats.unshift(c); currentId=c.id; save(); renderChat(); closeSidebar(); input.focus();
+  }
+
+  function closeSidebar(){ $("#sidebar").classList.remove("open"); }
+
+  $("#sendBtn").onclick=send;
+  input.addEventListener("input",autoResize);
+  input.addEventListener("keydown",e=>{
+    if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }
   });
-}else{status.textContent="ページは動作中";}
+  $("#newChatBtn").onclick=newChat;
+  $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");
+
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ input.value=b.dataset.text; autoResize(); input.focus(); });
+
+  $("#settingsBtn").onclick=()=>settingsDialog.showModal();
+  $("#closeSettings").onclick=()=>settingsDialog.close();
+  $("#cancelSettings").onclick=()=>settingsDialog.close();
+  $("#saveSettings").onclick=()=>{
+    settings.gatewayUrl=gatewayUrlInput.value.trim();
+    settings.regionUrl=regionUrlInput.value.trim();
+    saveSettings();
+    settingsDialog.close();
+  };
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.error));
+  }
+
+  renderHistory(); renderChat(); updateConnectionStatus();
+})();
 </script>
 </body>
 </html>
