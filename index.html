@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <link rel="manifest" href="./manifest.json">
+  <title>NAVI</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#0b1020;color:#fff}
+    main{width:min(720px,calc(100% - 32px));padding:32px;border:1px solid #334155;border-radius:20px;background:#111827}
+    h1{font-size:52px;margin:0 0 8px}p{line-height:1.7;color:#cbd5e1}.status{margin-top:24px;padding:14px;border-radius:12px;background:#12382f}
+  </style>
+</head>
+<body>
+<main>
+  <h1>NAVI</h1>
+  <p>GitHub Pagesで動作する最小構成のPWAです。</p>
+  <p>ここを土台に、チャット窓口・外部自由領域・移植再構築用掲示板などを追加できます。</p>
+  <div class="status" id="status">起動中...</div>
+</main>
+<script>
+const status=document.getElementById("status");
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{await navigator.serviceWorker.register("./sw.js");status.textContent="NAVI PWA 起動完了";}
+    catch(e){status.textContent="ページは動作中 / Service Worker登録失敗";}
+  });
+}else{status.textContent="ページは動作中";}
+</script>
+</body>
+</html>
